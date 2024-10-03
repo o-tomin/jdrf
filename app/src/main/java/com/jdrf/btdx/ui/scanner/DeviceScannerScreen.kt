@@ -7,11 +7,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jdrf.btdx.ext.eLog
 
 @Composable
 fun DeviceScannerScreen(
@@ -34,9 +34,8 @@ fun DeviceScannerScreen(
 
 @Composable
 fun EventsHandler(viewModel: DeviceScannerViewModel) {
-    val event: DeviceScannerEvent by viewModel.events.collectAsStateWithLifecycle(DeviceScannerEvent.Idle)
-    when (event) {
-        is DeviceScannerEvent.Error -> TODO()
+    when (val event = viewModel.events.collectAsStateWithLifecycle(DeviceScannerEvent.Idle).value) {
+        is DeviceScannerEvent.Error -> eLog(event.t)
         DeviceScannerEvent.Idle -> {}
     }
 }

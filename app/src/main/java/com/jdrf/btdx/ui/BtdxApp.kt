@@ -12,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.jdrf.btdx.ext.iLog
 import com.jdrf.btdx.ui.details.DeviceDetailsScreen
 import com.jdrf.btdx.ui.navigation.BtdxDestinations
 import com.jdrf.btdx.ui.navigation.BtdxDestinationsArgs.MAC_ADDRESS_ARG
@@ -51,7 +52,9 @@ fun BtdxApp(
                     }
                 )
             ) { entry ->
-                val macAddress = entry.arguments?.getString(MAC_ADDRESS_ARG)
+                val macAddress = entry.arguments?.getString(MAC_ADDRESS_ARG).also {
+                    iLog("show details for device with mac: $it")
+                }
 
                 DeviceDetailsScreen(
                     macAddress = macAddress

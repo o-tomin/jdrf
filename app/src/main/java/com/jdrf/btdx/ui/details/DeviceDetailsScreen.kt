@@ -6,11 +6,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jdrf.btdx.ext.eLog
 
 @Composable
 fun DeviceDetailsScreen(
@@ -28,10 +28,8 @@ fun DeviceDetailsScreen(
 
 @Composable
 fun EventsHandler(viewModel: DeviceDetailsViewModel) {
-    val event by viewModel.events.collectAsStateWithLifecycle(DeviceDetailsEvent.Idle)
-
-    when (event) {
-        is DeviceDetailsEvent.Error -> TODO()
+    when (val event = viewModel.events.collectAsStateWithLifecycle(DeviceDetailsEvent.Idle).value) {
+        is DeviceDetailsEvent.Error -> eLog(event.t)
         DeviceDetailsEvent.Idle -> {}
     }
 }
