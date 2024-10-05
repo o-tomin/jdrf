@@ -36,7 +36,8 @@ class MainActivity : ComponentActivity() {
             BtdxTheme {
                 BtdxApp(
                     startDestination = mviState.startDestination,
-                    isAllPermissionsGranted = mviState.bluetoothPermissionsGranted
+                    isAllPermissionsGranted = mviState.bluetoothPermissionsGranted,
+                    isBluetoothTurnedOn = mviState.isBluetoothTurnedOn,
                 )
             }
         }

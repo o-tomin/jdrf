@@ -17,6 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.jdrf.btdx.ext.iLog
 import com.jdrf.btdx.ui.details.DeviceDetailsScreen
+import com.jdrf.btdx.ui.dtdisabled.BluetoothDisabledScreen
 import com.jdrf.btdx.ui.navigation.BtdxDestinations
 import com.jdrf.btdx.ui.navigation.BtdxDestinationsArgs.MAC_ADDRESS_ARG
 import com.jdrf.btdx.ui.navigation.BtdxNavigationActions
@@ -30,6 +31,7 @@ fun BtdxApp(
     navController: NavHostController = rememberNavController(),
     startDestination: String = BtdxDestinations.SCANNED_DEVICES_ROUTE,
     isAllPermissionsGranted: Boolean,
+    isBluetoothTurnedOn: Boolean,
     navActions: BtdxNavigationActions = remember(
         navController, isAllPermissionsGranted, startDestination
     ) {
@@ -83,10 +85,18 @@ fun BtdxApp(
             composable(BtdxDestinations.APPLICATION_NOT_SUPPORTED_ROUTE) {
                 ApplicationNotSupportedScreen()
             }
+            composable(BtdxDestinations.BLUETOOTH_DISABLED_ROUTE) {
+                BluetoothDisabledScreen {
+                    navActions.navigateToScannedDevices()
+                }
+            }
         }
 
         if (!isAllPermissionsGranted) {
             navActions.navigateToPermissionsScreen()
+        }
+        if (!isBluetoothTurnedOn) {
+            navActions.navigateToBluetoothDisabledRoute()
         }
     }
 }

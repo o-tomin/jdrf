@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavOptionsBuilder
 import com.jdrf.btdx.ui.navigation.BtdxDestinationsArgs.MAC_ADDRESS_ARG
 import com.jdrf.btdx.ui.navigation.BtdxScreens.APPLICATION_NOT_SUPPORTED_SCREEN
+import com.jdrf.btdx.ui.navigation.BtdxScreens.BLUETOOTH_DISABLED_SCREEN
 import com.jdrf.btdx.ui.navigation.BtdxScreens.DEVICE_DETAILS_SCREEN
 import com.jdrf.btdx.ui.navigation.BtdxScreens.PERMISSIONS_SCREEN
 import com.jdrf.btdx.ui.navigation.BtdxScreens.SCANNED_DEVICES_SCREEN
@@ -14,6 +15,7 @@ private object BtdxScreens {
     const val SCANNED_DEVICES_SCREEN = "scannedDevices"
     const val DEVICE_DETAILS_SCREEN = "deviceDetails"
     const val PERMISSIONS_SCREEN = "permissionsScreen"
+    const val BLUETOOTH_DISABLED_SCREEN = "bluetoothDisabledScreen"
 }
 
 object BtdxDestinationsArgs {
@@ -25,6 +27,7 @@ object BtdxDestinations {
     const val DEVICE_DETAILS_ROUTE = "$DEVICE_DETAILS_SCREEN/?{$MAC_ADDRESS_ARG}"
     const val SCANNED_DEVICES_ROUTE = SCANNED_DEVICES_SCREEN
     const val PERMISSIONS_ROUTE = PERMISSIONS_SCREEN
+    const val BLUETOOTH_DISABLED_ROUTE = BLUETOOTH_DISABLED_SCREEN
 }
 
 class BtdxNavigationActions(
@@ -54,6 +57,19 @@ class BtdxNavigationActions(
 
     fun navigateToStartDestinationScreen() {
         navController.navigate(startDestination) {
+            defaultNavOptions()
+        }
+    }
+
+
+    fun navigateToScannedDevices() {
+        navController.navigate(SCANNED_DEVICES_SCREEN) {
+            defaultNavOptions()
+        }
+    }
+
+    fun navigateToBluetoothDisabledRoute() {
+        navController.navigate(BLUETOOTH_DISABLED_SCREEN) {
             defaultNavOptions()
         }
     }
