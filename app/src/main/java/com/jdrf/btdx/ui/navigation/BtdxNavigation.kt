@@ -6,12 +6,14 @@ import androidx.navigation.NavOptionsBuilder
 import com.jdrf.btdx.ui.navigation.BtdxDestinationsArgs.MAC_ADDRESS_ARG
 import com.jdrf.btdx.ui.navigation.BtdxScreens.APPLICATION_NOT_SUPPORTED_SCREEN
 import com.jdrf.btdx.ui.navigation.BtdxScreens.DEVICE_DETAILS_SCREEN
+import com.jdrf.btdx.ui.navigation.BtdxScreens.PERMISSIONS_SCREEN
 import com.jdrf.btdx.ui.navigation.BtdxScreens.SCANNED_DEVICES_SCREEN
 
 private object BtdxScreens {
     const val APPLICATION_NOT_SUPPORTED_SCREEN = "applicationNotSupported"
     const val SCANNED_DEVICES_SCREEN = "scannedDevices"
     const val DEVICE_DETAILS_SCREEN = "deviceDetails"
+    const val PERMISSIONS_SCREEN = "permissionsScreen"
 }
 
 object BtdxDestinationsArgs {
@@ -22,9 +24,13 @@ object BtdxDestinations {
     const val APPLICATION_NOT_SUPPORTED_ROUTE = APPLICATION_NOT_SUPPORTED_SCREEN
     const val DEVICE_DETAILS_ROUTE = "$DEVICE_DETAILS_SCREEN/?{$MAC_ADDRESS_ARG}"
     const val SCANNED_DEVICES_ROUTE = SCANNED_DEVICES_SCREEN
+    const val PERMISSIONS_ROUTE = PERMISSIONS_SCREEN
 }
 
-class BtdxNavigationActions(private val navController: NavHostController) {
+class BtdxNavigationActions(
+    private val navController: NavHostController,
+    private val startDestination: String
+) {
 
     fun navigateToDeviceDetails(
         macAddress: String?
@@ -36,6 +42,18 @@ class BtdxNavigationActions(private val navController: NavHostController) {
 
     fun navigateToApplicationNotSupported() {
         navController.navigate(APPLICATION_NOT_SUPPORTED_SCREEN) {
+            defaultNavOptions()
+        }
+    }
+
+    fun navigateToPermissionsScreen() {
+        navController.navigate(PERMISSIONS_SCREEN) {
+            defaultNavOptions()
+        }
+    }
+
+    fun navigateToStartDestinationScreen() {
+        navController.navigate(startDestination) {
             defaultNavOptions()
         }
     }

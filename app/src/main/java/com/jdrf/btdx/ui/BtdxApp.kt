@@ -21,6 +21,7 @@ import com.jdrf.btdx.ui.navigation.BtdxDestinations
 import com.jdrf.btdx.ui.navigation.BtdxDestinationsArgs.MAC_ADDRESS_ARG
 import com.jdrf.btdx.ui.navigation.BtdxNavigationActions
 import com.jdrf.btdx.ui.nosupport.ApplicationNotSupportedScreen
+import com.jdrf.btdx.ui.permissions.PermissionsScreen
 import com.jdrf.btdx.ui.scanner.DeviceScannerScreen
 
 @Composable
@@ -28,9 +29,12 @@ fun BtdxApp(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     startDestination: String = BtdxDestinations.SCANNED_DEVICES_ROUTE,
-    navActions: BtdxNavigationActions = remember(navController) {
-        BtdxNavigationActions(navController)
-    }
+    isAllPermissionsGranted: Boolean,
+    navActions: BtdxNavigationActions = remember(
+        navController, isAllPermissionsGranted, startDestination
+    ) {
+        BtdxNavigationActions(navController, startDestination)
+    },
 ) {
     Scaffold(
         modifier = Modifier
@@ -45,6 +49,11 @@ fun BtdxApp(
             startDestination = startDestination,
             modifier = modifier.padding(innerPadding)
         ) {
+            composable(BtdxDestinations.PERMISSIONS_ROUTE) {
+                PermissionsScreen {
+                    navActions.navigateToStartDestinationScreen()
+                }
+            }
             composable(BtdxDestinations.SCANNED_DEVICES_ROUTE) {
                 DeviceScannerScreen(
                     onDeviceDetails = {
@@ -74,6 +83,10 @@ fun BtdxApp(
             composable(BtdxDestinations.APPLICATION_NOT_SUPPORTED_ROUTE) {
                 ApplicationNotSupportedScreen()
             }
+        }
+
+        if (!isAllPermissionsGranted) {
+            navActions.navigateToPermissionsScreen()
         }
     }
 }
