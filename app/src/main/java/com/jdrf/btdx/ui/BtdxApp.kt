@@ -30,10 +30,15 @@ fun BtdxApp(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     startDestination: String = BtdxDestinations.SCANNED_DEVICES_ROUTE,
+    isBluetoothAvailable: Boolean,
     isAllPermissionsGranted: Boolean,
     isBluetoothTurnedOn: Boolean,
     navActions: BtdxNavigationActions = remember(
-        navController, isAllPermissionsGranted, startDestination
+        navController,
+        isAllPermissionsGranted,
+        startDestination,
+        isBluetoothAvailable,
+        isBluetoothTurnedOn
     ) {
         BtdxNavigationActions(navController, startDestination)
     },
@@ -51,11 +56,6 @@ fun BtdxApp(
             startDestination = startDestination,
             modifier = modifier.padding(innerPadding)
         ) {
-            composable(BtdxDestinations.PERMISSIONS_ROUTE) {
-                PermissionsScreen {
-                    navActions.navigateToStartDestinationScreen()
-                }
-            }
             composable(BtdxDestinations.SCANNED_DEVICES_ROUTE) {
                 DeviceScannerScreen(
                     onDeviceDetails = {
@@ -85,17 +85,31 @@ fun BtdxApp(
             composable(BtdxDestinations.APPLICATION_NOT_SUPPORTED_ROUTE) {
                 ApplicationNotSupportedScreen()
             }
+            composable(BtdxDestinations.PERMISSIONS_ROUTE) {
+                PermissionsScreen {
+                    if (!isBluetoothTurnedOn) {
+                        navActions.navigateToBluetoothDisabledRoute()
+                    } else {
+                        navActions.navigateToStartDestinationScreen()
+                    }
+                }
+            }
             composable(BtdxDestinations.BLUETOOTH_DISABLED_ROUTE) {
                 BluetoothDisabledScreen {
-                    navActions.navigateToScannedDevices()
+                    if (!isAllPermissionsGranted) {
+                        navActions.navigateToPermissionsScreen()
+                    } else {
+                        navActions.navigateToScannedDevices()
+                    }
                 }
             }
         }
 
-        if (!isAllPermissionsGranted) {
+        if (!isBluetoothAvailable) {
+            navActions.navigateToApplicationNotSupported()
+        } else if (!isAllPermissionsGranted) {
             navActions.navigateToPermissionsScreen()
-        }
-        if (!isBluetoothTurnedOn) {
+        } else if (!isBluetoothTurnedOn) {
             navActions.navigateToBluetoothDisabledRoute()
         }
     }

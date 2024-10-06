@@ -1,8 +1,10 @@
 <resources>
     <string name="app_name">Bluetooth Diagnostics Application</string>
     <string name="warning">Warning!</string>
-    <string name="application_not_supported">Your device does not support this application.</string>
-    <string name="please_grant_permissions">Please, grant bluetooth permissions.</string>
+    <string name="application_not_supported">Your device does not support this application</string>
+    <string name="please_grant_permissions">Please, grant bluetooth permissions</string>
     <string name="grant">Grant</string>
+    <string name="please_enable_bluetooth">Please, enable bluetooth</string>
+    <string name="enable">Enable</string>
 
 </resources>
