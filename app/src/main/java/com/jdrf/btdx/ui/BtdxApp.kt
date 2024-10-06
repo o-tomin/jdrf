@@ -62,6 +62,9 @@ fun BtdxApp(
                         navActions.navigateToDeviceDetails(
                             macAddress = it
                         )
+                    },
+                    onBluetoothDisabled = {
+                        navActions.navigateToBluetoothDisabledRoute()
                     }
                 )
             }

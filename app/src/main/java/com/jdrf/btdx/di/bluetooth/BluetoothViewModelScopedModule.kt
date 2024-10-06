@@ -3,6 +3,8 @@ package com.jdrf.btdx.di.bluetooth
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Build
 import androidx.core.content.getSystemService
@@ -47,5 +49,23 @@ object BluetoothViewModelScopedModule {
                 Manifest.permission.BLUETOOTH_ADMIN to context.isPermissionGranted(Manifest.permission.BLUETOOTH_ADMIN)
             )
         }
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideScanSettings(): ScanSettings? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            ScanSettings.Builder()
+                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
+                .build()
+        } else null
+    }
+
+    @Provides
+    fun provideBluetoothLeScanner(
+        adapter: BluetoothAdapter,
+    ): BluetoothLeScanner? {
+        return adapter.bluetoothLeScanner
     }
 }

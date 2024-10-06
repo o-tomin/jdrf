@@ -6,5 +6,6 @@
     <string name="grant">Grant</string>
     <string name="please_enable_bluetooth">Please, enable bluetooth</string>
     <string name="enable">Enable</string>
-
+    <string name="scan">Scan</string>
+    <string name="stop">Stop</string>
 </resources>
