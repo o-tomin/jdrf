@@ -9,6 +9,7 @@ import android.content.Context
 import android.os.Build
 import androidx.core.content.getSystemService
 import com.jdrf.btdx.bluetooth.feature.BluetoothPermissionsObserver.Companion.isPermissionGranted
+import com.jdrf.btdx.bluetooth.feature.DeviceConnectionObserverFactory
 import com.jdrf.btdx.ext.iLog
 import dagger.Module
 import dagger.Provides
@@ -67,5 +68,15 @@ object BluetoothViewModelScopedModule {
         adapter: BluetoothAdapter,
     ): BluetoothLeScanner? {
         return adapter.bluetoothLeScanner
+    }
+
+    @ViewModelScoped
+    @Provides
+    fun provideDeviceConnectionObserverFactory(
+        @ApplicationContext context: Context,
+    ): DeviceConnectionObserverFactory {
+        return DeviceConnectionObserverFactory(
+            context,
+        )
     }
 }

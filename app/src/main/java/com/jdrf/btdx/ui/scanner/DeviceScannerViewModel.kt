@@ -1,98 +1,139 @@
 package com.jdrf.btdx.ui.scanner
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.le.BluetoothLeScanner
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanResult
-import android.bluetooth.le.ScanSettings
+import android.bluetooth.BluetoothProfile
+import androidx.lifecycle.viewModelScope
+import com.jdrf.btdx.bluetooth.feature.DeviceConnectionObserver
+import com.jdrf.btdx.bluetooth.feature.DeviceConnectionObserverFactory
+import com.jdrf.btdx.bluetooth.feature.DeviceScannerObserver
 import com.jdrf.btdx.ui.MviBaseViewModel
 import com.jdrf.btdx.ui.MviBaseViewState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class DeviceScannerViewModel @Inject constructor(
-    private val scannerSettings: ScanSettings?,
-    private val bluetoothLeScanner: BluetoothLeScanner?,
+    private val deviceScannerObserver: DeviceScannerObserver,
+    private val deviceConnectionObserverFactory: DeviceConnectionObserverFactory,
 ) : MviBaseViewModel<DeviceScannerState, DeviceScannerEvent>(
     DeviceScannerState(
         isScanning = false,
-        devices = emptySet()
+        devices = emptySet(),
+        connections = emptyMap()
     )
 ) {
-
-    private val scanCallback: ScanCallback by lazy {
-        object : ScanCallback() {
-            override fun onScanResult(callbackType: Int, result: ScanResult?) {
-                super.onScanResult(callbackType, result)
-                result?.device?.let { device ->
-                    updateState { copy(devices = setOf(device) + devices) }
-                }
-            }
-
-            @SuppressLint("SwitchIntDef")
-            override fun onScanFailed(errorCode: Int) {
-                super.onScanFailed(errorCode)
-
-                when (errorCode) {
-                    SCAN_FAILED_ALREADY_STARTED -> sendEvent(DeviceScannerEvent.ScanFailedAlreadyStarted)
-                    SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> sendEvent(DeviceScannerEvent.ScanFailedApplicationRegistrationFailed)
-                    SCAN_FAILED_INTERNAL_ERROR -> sendEvent(DeviceScannerEvent.ScanFailedInternalError)
-                    SCAN_FAILED_FEATURE_UNSUPPORTED -> sendEvent(DeviceScannerEvent.ScanFailedFeatureUnsupported)
-                    SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES -> sendEvent(DeviceScannerEvent.ScanFailedOutOfHardwareResources)
-                    SCAN_FAILED_SCANNING_TOO_FREQUENTLY -> sendEvent(DeviceScannerEvent.ScanFailedScanningTooFrequently)
-                    SCAN_RESULT_NO_ERROR -> sendEvent(DeviceScannerEvent.ScanResultNoError)
-                    else -> sendEvent(DeviceScannerEvent.ScanResultUnknown(errorCode))
-                }
-            }
-        }
-    }
-
     init {
-        if (null == bluetoothLeScanner) {
-            sendEvent(DeviceScannerEvent.ShowEnableBluetoothScreen)
+        with(deviceScannerObserver) {
+            deviceFlow.bind { newDevice ->
+                copy(devices = setOf(newDevice) + devices)
+            }
+            errorCodesFlow.onEach {
+                sendEvent(DeviceScannerEvent.ScanErrorCode(event = it))
+            }
         }
     }
 
     @SuppressLint("MissingPermission")
-    fun startScanning() =
-        bluetoothLeScanner?.startScan(
-            null,
-            scannerSettings,
-            scanCallback,
-        ).also {
-            updateState { copy(isScanning = true) }
-        }
+    fun connect(btdxDevice: DeviceScannerObserver.BtdxBluetoothDevice) = viewModelScope.launch {
+        with(state.value) {
+            val connection = if (!connections.contains(btdxDevice.device.address)) {
+                deviceConnectionObserverFactory.create(btdxDevice).apply {
+                    deviceResponseFlow.onEach { response ->
+                        processDeviceResponse(response)
+                    }.launchIn(viewModelScope)
+                }
+            } else connections[btdxDevice.device.address]
 
-    @SuppressLint("MissingPermission")
-    fun stopScanning() =
-        bluetoothLeScanner?.stopScan(scanCallback).also {
-            updateState { copy(isScanning = false) }
+            connection?.let {
+                it.connectToRemoteDevice()
+                setState {
+                    copy(connections = mapOf(btdxDevice.device.address to connection) + connections)
+                }
+            }
         }
+    }
 
-    companion object {
-        const val SCAN_RESULT_NO_ERROR = 0
+    fun disconnect(btdxDevice: DeviceScannerObserver.BtdxBluetoothDevice) = viewModelScope.launch {
+        with(state.value) {
+            connections[btdxDevice.device.address]?.disconnectFromRemoteDevice()
+            setState {
+                copy(
+                    connections = connections.filterNot { it.key == btdxDevice.device.address }
+                )
+            }
+        }
+    }
+
+    private suspend fun processDeviceResponse(response: DeviceConnectionObserver.GattResponse) {
+        when (response) {
+            is DeviceConnectionObserver.GattResponse.OnConnectionStateChange -> {
+                val isConnected: Boolean = response.newState == BluetoothProfile.STATE_CONNECTED
+                setState {
+                    copy(
+                        devices = devices.map { btdxDevice ->
+                            if (btdxDevice.device == response.gatt.device) {
+                                btdxDevice.copy(
+                                    isConnected = isConnected
+                                )
+                            } else btdxDevice
+                        }.toSet()
+                    )
+                }
+                sendEvent(
+                    DeviceScannerEvent.GattConnectionResponse(
+                        isConnected = isConnected,
+                        address = response.gatt.device?.address ?: ""
+                    )
+                )
+            }
+
+            is DeviceConnectionObserver.GattResponse.OnCharacteristicRead,
+            is DeviceConnectionObserver.GattResponse.OnCharacteristicWrite,
+            is DeviceConnectionObserver.GattResponse.OnMtuChanged,
+            is DeviceConnectionObserver.GattResponse.OnServicesDiscovered -> {
+                sendEvent(DeviceScannerEvent.GattResponse(response))
+            }
+        }
+    }
+
+    fun stopScanning() {
+        updateState { copy(isScanning = false) }
+        deviceScannerObserver.stopScanning()
+    }
+
+    fun startScanning() {
+        updateState { copy(isScanning = true) }
+        deviceScannerObserver.startScanning()
     }
 }
 
 data class DeviceScannerState(
     val isScanning: Boolean,
-    val devices: Set<BluetoothDevice>,
+    val devices: Set<DeviceScannerObserver.BtdxBluetoothDevice>,
+    val connections: Map<String, DeviceConnectionObserver>
 ) : MviBaseViewState
 
 sealed class DeviceScannerEvent {
     data object Idle : DeviceScannerEvent()
     data object ShowEnableBluetoothScreen : DeviceScannerEvent()
 
-    data object ScanFailedAlreadyStarted : DeviceScannerEvent()
-    data object ScanFailedApplicationRegistrationFailed : DeviceScannerEvent()
-    data object ScanFailedInternalError : DeviceScannerEvent()
-    data object ScanFailedFeatureUnsupported : DeviceScannerEvent()
-    data object ScanFailedOutOfHardwareResources : DeviceScannerEvent()
-    data object ScanFailedScanningTooFrequently : DeviceScannerEvent()
-    data object ScanResultNoError : DeviceScannerEvent()
-    data class ScanResultUnknown(val errorCode: Int) : DeviceScannerEvent()
+    data class ScanErrorCode(
+        val event: DeviceScannerObserver.BtdxErrorCode
+    ) : DeviceScannerEvent()
 
-    data class Error(val t: Throwable) : DeviceScannerEvent()
+    data class GattResponse(
+        val response: DeviceConnectionObserver.GattResponse
+    ) : DeviceScannerEvent()
+
+    data class GattConnectionResponse(
+        val isConnected: Boolean,
+        val address: String,
+    ) : DeviceScannerEvent()
+
+    data class Error(
+        val t: Throwable
+    ) : DeviceScannerEvent()
 }

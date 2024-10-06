@@ -4,8 +4,10 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -72,9 +74,17 @@ fun DeviceScannerScreen(
                     .padding(paddings),
                 state = rememberLazyListState(),
             ) {
-                items(mviState.devices.toList()) {
+                items(mviState.devices.toList()) { btdxDevice ->
                     Text(
-                        text = "${it.name} ${it.address}",
+                        modifier = Modifier
+                            .height(20.dp)
+                            .clickable {
+                                if (!btdxDevice.isConnected)
+                                    viewModel.connect(btdxDevice)
+                                else
+                                    viewModel.disconnect(btdxDevice)
+                            },
+                        text = "${btdxDevice.device.name} ${btdxDevice.device.address} ${btdxDevice.isConnected}",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
