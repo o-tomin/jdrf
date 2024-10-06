@@ -2,10 +2,12 @@ package com.jdrf.btdx.bluetooth.feature
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.content.Context
 import com.jdrf.btdx.di.coroutines.BtdxDispatchers
 import com.jdrf.btdx.di.coroutines.Dispatcher
 import com.jdrf.btdx.di.general.ApplicationScope
@@ -44,7 +46,7 @@ class DeviceScannerObserver @Inject constructor(
                 override fun onScanResult(callbackType: Int, result: ScanResult?) {
                     super.onScanResult(callbackType, result)
                     result?.device?.let { device ->
-                        trySend(BtdxBluetoothDevice(device = device))
+                        trySend(BtdxBluetoothDevice.create(device))
                     }
                 }
 
@@ -107,9 +109,43 @@ class DeviceScannerObserver @Inject constructor(
     }
 
     data class BtdxBluetoothDevice(
-        val device: BluetoothDevice,
-        val isConnected: Boolean = false,
-    )
+        private val device: BluetoothDevice,
+        val name: String,
+        val address: String,
+        val isConnected: Boolean,
+    ) {
+
+        @SuppressLint("MissingPermission")
+        fun connectGatt(
+            context: Context,
+            autoConnect: Boolean = false,
+            callback: BluetoothGattCallback
+        ) =
+            device.connectGatt(
+                context,
+                autoConnect,
+                callback
+            )!!
+
+        fun isSameDevice(thatDevice: BluetoothDevice): Boolean {
+            return this.device == thatDevice
+        }
+
+        companion object {
+
+            @SuppressLint("MissingPermission")
+            fun create(
+                device: BluetoothDevice
+            ): BtdxBluetoothDevice {
+                return BtdxBluetoothDevice(
+                    device = device,
+                    name = device.name ?: "Unknown",
+                    address = device.address,
+                    isConnected = false,
+                )
+            }
+        }
+    }
 
     sealed class BtdxErrorCode {
         data object ScanFailedAlreadyStarted : BtdxErrorCode()

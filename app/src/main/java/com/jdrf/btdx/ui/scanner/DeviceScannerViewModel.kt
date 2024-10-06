@@ -39,18 +39,18 @@ class DeviceScannerViewModel @Inject constructor(
     @SuppressLint("MissingPermission")
     fun connect(btdxDevice: DeviceScannerObserver.BtdxBluetoothDevice) = viewModelScope.launch {
         with(state.value) {
-            val connection = if (!connections.contains(btdxDevice.device.address)) {
+            val connection = if (!connections.contains(btdxDevice.address)) {
                 deviceConnectionObserverFactory.create(btdxDevice).apply {
                     deviceResponseFlow.onEach { response ->
                         processDeviceResponse(response)
                     }.launchIn(viewModelScope)
                 }
-            } else connections[btdxDevice.device.address]
+            } else connections[btdxDevice.address]
 
             connection?.let {
                 it.connectToRemoteDevice()
                 setState {
-                    copy(connections = mapOf(btdxDevice.device.address to connection) + connections)
+                    copy(connections = mapOf(btdxDevice.address to connection) + connections)
                 }
             }
         }
@@ -58,10 +58,10 @@ class DeviceScannerViewModel @Inject constructor(
 
     fun disconnect(btdxDevice: DeviceScannerObserver.BtdxBluetoothDevice) = viewModelScope.launch {
         with(state.value) {
-            connections[btdxDevice.device.address]?.disconnectFromRemoteDevice()
+            connections[btdxDevice.address]?.disconnectFromRemoteDevice()
             setState {
                 copy(
-                    connections = connections.filterNot { it.key == btdxDevice.device.address }
+                    connections = connections.filterNot { it.key == btdxDevice.address }
                 )
             }
         }
@@ -74,7 +74,7 @@ class DeviceScannerViewModel @Inject constructor(
                 setState {
                     copy(
                         devices = devices.map { btdxDevice ->
-                            if (btdxDevice.device == response.gatt.device) {
+                            if (btdxDevice.isSameDevice(response.gatt.device)) {
                                 btdxDevice.copy(
                                     isConnected = isConnected
                                 )

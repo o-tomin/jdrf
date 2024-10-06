@@ -111,7 +111,7 @@ class DeviceConnectionObserver(
 
     @SuppressLint("MissingPermission")
     fun connectToRemoteDevice() {
-        gatt = btdxDevice.device.connectGatt(context, false, bluetoothGattCallback)
+        gatt = btdxDevice.connectGatt(context, false, bluetoothGattCallback)
     }
 
     @SuppressLint("MissingPermission")
