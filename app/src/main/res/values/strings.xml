@@ -8,4 +8,7 @@
     <string name="enable">Enable</string>
     <string name="scan">Scan</string>
     <string name="stop">Stop</string>
+    <string name="name_ascending_sort">Sort by name in ascending order</string>
+    <string name="mac_ascending_sort">Sort by MAC in ascending order</string>
+    <string name="last_scanned_on_top">Last scanned on top</string>
 </resources>

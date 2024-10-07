@@ -22,7 +22,8 @@ class DeviceScannerViewModel @Inject constructor(
     DeviceScannerState(
         isScanning = false,
         devices = emptySet(),
-        connections = emptyMap()
+        connections = emptyMap(),
+        sortedWith = Comparators.NoOpComparator,
     )
 ) {
     init {
@@ -108,12 +109,45 @@ class DeviceScannerViewModel @Inject constructor(
         updateState { copy(isScanning = true) }
         deviceScannerObserver.startScanning()
     }
+
+    fun sortInAscendingOrderByName() {
+        updateState { copy(sortedWith = Comparators.CompareByNameAscending) }
+    }
+
+    fun sortInAscendingOrderByMac() {
+        updateState { copy(sortedWith = Comparators.CompareByMacAscending) }
+    }
+
+    fun sortByLastScannedOnTop() {
+        updateState { copy(sortedWith = Comparators.NoOpComparator) }
+    }
+
+    sealed class Comparators {
+
+        abstract val comparator: Comparator<DeviceScannerObserver.BtdxBluetoothDevice>
+
+        data object CompareByNameAscending : Comparators() {
+            override val comparator =
+                compareBy<DeviceScannerObserver.BtdxBluetoothDevice> { it.name }
+        }
+
+        data object CompareByMacAscending : Comparators() {
+            override val comparator =
+                compareBy<DeviceScannerObserver.BtdxBluetoothDevice> { it.address }
+        }
+
+        data object NoOpComparator : Comparators() {
+            override val comparator =
+                Comparator<DeviceScannerObserver.BtdxBluetoothDevice> { _, _ -> 0 }
+        }
+    }
 }
 
 data class DeviceScannerState(
     val isScanning: Boolean,
     val devices: Set<DeviceScannerObserver.BtdxBluetoothDevice>,
-    val connections: Map<String, DeviceConnectionObserver>
+    val connections: Map<String, DeviceConnectionObserver>,
+    val sortedWith: DeviceScannerViewModel.Comparators
 ) : MviBaseViewState
 
 sealed class DeviceScannerEvent {

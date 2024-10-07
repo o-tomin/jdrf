@@ -23,9 +23,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -60,6 +63,9 @@ fun DeviceScannerScreen(
             .background(
                 color = MaterialTheme.colorScheme.background
             ),
+        topBar = {
+            ScrollableTabRow(viewModel)
+        },
         bottomBar = {
             Button(
                 onClick = {
@@ -87,7 +93,10 @@ fun DeviceScannerScreen(
                     .padding(paddings),
                 state = rememberLazyListState(),
             ) {
-                items(mviState.devices.toList()) { btdxDevice ->
+                item {
+                    Spacer(Modifier.padding(top = 4.dp))
+                }
+                items(mviState.devices.sortedWith(mviState.sortedWith.comparator)) { btdxDevice ->
                     DeviceCard(
                         name = btdxDevice.name,
                         macAddress = btdxDevice.address,
@@ -162,6 +171,41 @@ fun DeviceCard(
                 }
             }
 
+        }
+    }
+}
+
+@Composable
+fun ScrollableTabRow(
+    viewModel: DeviceScannerViewModel
+) {
+    val context = LocalContext.current
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+
+    val tabs = listOf(
+        context.getString(R.string.name_ascending_sort),
+        context.getString(R.string.mac_ascending_sort),
+        context.getString(R.string.last_scanned_on_top),
+    )
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        ScrollableTabRow(
+            selectedTabIndex = selectedTabIndex,
+            edgePadding = 8.dp
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTabIndex == index,
+                    onClick = { selectedTabIndex = index },
+                    text = { Text(title) }
+                )
+            }
+        }
+
+        when (selectedTabIndex) {
+            0 -> viewModel.sortInAscendingOrderByName()
+            1 -> viewModel.sortInAscendingOrderByMac()
+            2 -> viewModel.sortByLastScannedOnTop()
         }
     }
 }
