@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.content.pm.PackageManager.FEATURE_BLUETOOTH
 import android.content.pm.PackageManager.FEATURE_BLUETOOTH_LE
 import androidx.core.content.getSystemService
+import com.jdrf.btdx.bluetooth.feature.BluetoothConnectionsManager
 import com.jdrf.btdx.di.feature.FeatureName
 import com.jdrf.btdx.di.feature.IsFeatureAvailable
 import com.jdrf.btdx.ext.iLog
@@ -37,5 +38,11 @@ object BluetoothSingletonScopedModule {
         iLog("hasBLE=$hasBLE")
 
         return bluetoothAdapter != null && hasBT && hasBLE
+    }
+
+    @Singleton
+    @Provides
+    fun provideConnectionsManager(): BluetoothConnectionsManager {
+        return BluetoothConnectionsManager()
     }
 }

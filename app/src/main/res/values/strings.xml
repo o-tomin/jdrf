@@ -11,4 +11,9 @@
     <string name="name_ascending_sort">Sort by name in ascending order</string>
     <string name="mac_ascending_sort">Sort by MAC in ascending order</string>
     <string name="last_scanned_on_top">Last scanned on top</string>
+    <string name="service_uuid">Service UUID: %s</string>
+    <string name="parent_service_uuid">Parent service UUID: %s</string>
+    <string name="characteristics_count">Characteristics Count: %s</string>
+    <string name="characteristic_uuid">Characteristic UUID: %s</string>
+    <string name="included_services">Included Services:</string>
 </resources>

@@ -115,6 +115,11 @@ class DeviceConnectionObserver(
     }
 
     @SuppressLint("MissingPermission")
+    fun discoverServices() {
+        gatt.discoverServices()
+    }
+
+    @SuppressLint("MissingPermission")
     fun disconnectFromRemoteDevice() {
         if (::gatt.isInitialized) {
             gatt.disconnect()

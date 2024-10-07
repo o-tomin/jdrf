@@ -3,6 +3,7 @@ package com.jdrf.btdx.ui.scanner
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothProfile
 import androidx.lifecycle.viewModelScope
+import com.jdrf.btdx.bluetooth.feature.BluetoothConnectionsManager
 import com.jdrf.btdx.bluetooth.feature.DeviceConnectionObserver
 import com.jdrf.btdx.bluetooth.feature.DeviceConnectionObserverFactory
 import com.jdrf.btdx.bluetooth.feature.DeviceScannerObserver
@@ -18,18 +19,22 @@ import javax.inject.Inject
 class DeviceScannerViewModel @Inject constructor(
     private val deviceScannerObserver: DeviceScannerObserver,
     private val deviceConnectionObserverFactory: DeviceConnectionObserverFactory,
+    private val connectionsManager: BluetoothConnectionsManager,
 ) : MviBaseViewModel<DeviceScannerState, DeviceScannerEvent>(
     DeviceScannerState(
         isScanning = false,
         devices = emptySet(),
-        connections = emptyMap(),
         sortedWith = Comparators.NoOpComparator,
     )
 ) {
     init {
         with(deviceScannerObserver) {
             deviceFlow.bind { newDevice ->
-                copy(devices = setOf(newDevice) + devices)
+                copy(
+                    devices = if (devices.none { it.address == newDevice.address }) {
+                        setOf(newDevice) + devices
+                    } else devices
+                )
             }
             errorCodesFlow.onEach {
                 sendEvent(DeviceScannerEvent.ScanErrorCode(event = it))
@@ -39,33 +44,23 @@ class DeviceScannerViewModel @Inject constructor(
 
     @SuppressLint("MissingPermission")
     fun connect(btdxDevice: DeviceScannerObserver.BtdxBluetoothDevice) = viewModelScope.launch {
-        with(state.value) {
-            val connection = if (!connections.contains(btdxDevice.address)) {
-                deviceConnectionObserverFactory.create(btdxDevice).apply {
-                    deviceResponseFlow.onEach { response ->
-                        processDeviceResponse(response)
-                    }.launchIn(viewModelScope)
-                }
-            } else connections[btdxDevice.address]
-
-            connection?.let {
-                it.connectToRemoteDevice()
-                setState {
-                    copy(connections = mapOf(btdxDevice.address to connection) + connections)
-                }
+        val connection = if (!connectionsManager.contains(btdxDevice.address)) {
+            deviceConnectionObserverFactory.create(btdxDevice).apply {
+                deviceResponseFlow.onEach { response ->
+                    processDeviceResponse(response)
+                }.launchIn(viewModelScope)
             }
+        } else connectionsManager.retrieveConnection(btdxDevice.address)
+
+        connection?.let {
+            it.connectToRemoteDevice()
+            connectionsManager.addConnection(btdxDevice.address, connection)
         }
     }
 
     fun disconnect(btdxDevice: DeviceScannerObserver.BtdxBluetoothDevice) = viewModelScope.launch {
-        with(state.value) {
-            connections[btdxDevice.address]?.disconnectFromRemoteDevice()
-            setState {
-                copy(
-                    connections = connections.filterNot { it.key == btdxDevice.address }
-                )
-            }
-        }
+        connectionsManager.retrieveConnection(btdxDevice.address)?.disconnectFromRemoteDevice()
+        connectionsManager.deleteConnection(btdxDevice.address)
     }
 
     private suspend fun processDeviceResponse(response: DeviceConnectionObserver.GattResponse) {
@@ -146,7 +141,6 @@ class DeviceScannerViewModel @Inject constructor(
 data class DeviceScannerState(
     val isScanning: Boolean,
     val devices: Set<DeviceScannerObserver.BtdxBluetoothDevice>,
-    val connections: Map<String, DeviceConnectionObserver>,
     val sortedWith: DeviceScannerViewModel.Comparators
 ) : MviBaseViewState
 
