@@ -15,6 +15,7 @@ import android.bluetooth.BluetoothGatt.GATT_SUCCESS
 import android.bluetooth.BluetoothGatt.GATT_WRITE_NOT_PERMITTED
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -151,6 +152,11 @@ class DeviceConnectionObserver(
             GATT_FAILURE -> GattStatus.GattFailure
             else -> GattStatus.GattUnknown
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun readDescriptor(descriptor: BluetoothGattDescriptor) {
+        gatt.readDescriptor(descriptor)
     }
 
     sealed class GattResponse {

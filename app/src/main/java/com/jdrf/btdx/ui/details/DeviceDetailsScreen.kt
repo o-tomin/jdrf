@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -54,6 +55,7 @@ fun DeviceDetailsScreen(
             ) {
                 BluetoothGattServiceView(
                     mviState.services,
+                    viewModel = viewModel,
                 )
             }
         }
@@ -64,11 +66,13 @@ fun DeviceDetailsScreen(
 fun BluetoothGattServiceView(
     services: List<BluetoothGattService>,
     parent: BluetoothGattService? = null,
+    viewModel: DeviceDetailsViewModel
 ) {
     services.forEach { service ->
         DisplayBluetoothGattService(
             service,
-            parent
+            parent,
+            viewModel
         )
     }
 }
@@ -77,6 +81,7 @@ fun BluetoothGattServiceView(
 fun DisplayBluetoothGattService(
     service: BluetoothGattService,
     parent: BluetoothGattService?,
+    viewModel: DeviceDetailsViewModel,
 ) {
     val uuid = service.uuid.toString()
     val characteristics = service.characteristics
@@ -104,15 +109,37 @@ fun DisplayBluetoothGattService(
 
         characteristics.forEach { characteristic ->
             Text(
-                text = stringResource(R.string.characteristics_count).format(characteristic.uuid),
+                text = stringResource(R.string.characteristic_uuid).format(characteristic.uuid),
                 style = MaterialTheme.typography.bodyMedium
             )
+            characteristic.descriptors.forEach { descriptor ->
+                Column(Modifier.padding(start = 5.dp)) {
+                    Text(
+                        text = "Descriptor UUID: ${descriptor.uuid}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "Descriptor Permissions: ${descriptor.permissions}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    key(descriptor.value) {
+                        Text(
+                            text = "Descriptor Value: ${descriptor.value}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        LaunchedEffect(descriptor) {
+                            viewModel.readDescriptor(descriptor)
+                        }
+                    }
+                }
+
+            }
         }
 
         val nestedServices = service.includedServices
         if (nestedServices != null && nestedServices.isNotEmpty()) {
             Text(text = stringResource(R.string.included_services))
-            BluetoothGattServiceView(nestedServices)
+            BluetoothGattServiceView(nestedServices, viewModel = viewModel)
         }
     }
 }

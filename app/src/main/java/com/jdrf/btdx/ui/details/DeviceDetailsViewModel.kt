@@ -1,6 +1,7 @@
 package com.jdrf.btdx.ui.details
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothProfile
 import androidx.lifecycle.viewModelScope
@@ -68,6 +69,16 @@ class DeviceDetailsViewModel @Inject constructor(
             is DeviceConnectionObserver.GattResponse.OnMtuChanged -> {
                 sendEvent(DeviceDetailsEvent.GattResponse(response))
             }
+        }
+    }
+
+    fun readDescriptor(descriptor: BluetoothGattDescriptor?) {
+        runCatching {
+            with(state.value) {
+                connection?.readDescriptor(descriptor!!)
+            }
+        }.onFailure {
+            sendEvent(DeviceDetailsEvent.Error(it))
         }
     }
 }
