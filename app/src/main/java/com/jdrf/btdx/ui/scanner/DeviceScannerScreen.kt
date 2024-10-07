@@ -128,7 +128,11 @@ fun DeviceCard(
     Card(
         modifier = modifier
             .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clickable { onDeviceDetails(macAddress) },
+            .clickable {
+                if (isConnected) {
+                    onDeviceDetails(macAddress)
+                }
+            },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
