@@ -154,9 +154,6 @@ class DeviceDetailsViewModel @Inject constructor(
             sendEvent(DeviceDetailsEvent.Error(it))
         }
 
-    fun showValueInputDialog(characteristic: BtdxCharacteristic) {
-        sendEvent(DeviceDetailsEvent.ShowValueInputDialog(characteristic))
-    }
 }
 
 data class DeviceDetailsState(
@@ -173,8 +170,6 @@ sealed class DeviceDetailsEvent {
     data class GattResponse(
         val response: DeviceConnectionObserver.GattResponse
     ) : DeviceDetailsEvent()
-
-    data class ShowValueInputDialog(val characteristic: BtdxCharacteristic) : DeviceDetailsEvent()
 
     data class Error(val t: Throwable) : DeviceDetailsEvent()
 }

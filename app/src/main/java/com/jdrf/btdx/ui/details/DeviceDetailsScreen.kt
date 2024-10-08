@@ -137,6 +137,7 @@ fun DisplayBluetoothGattService(
                 text = stringResource(R.string.write_type).format(characteristic.writeType),
                 style = MaterialTheme.typography.bodySmall
             )
+            var showDialog by remember { mutableStateOf(false) }
             Text(
                 modifier = Modifier.combinedClickable(
                     onClick = {
@@ -147,13 +148,27 @@ fun DisplayBluetoothGattService(
                             BtdxCharacteristic.Property.WRITE in characteristic.properties
                             || BtdxCharacteristic.Property.WRITE_NO_RESPONSE in characteristic.properties
                         ) {
-                            viewModel.showValueInputDialog(characteristic)
+                            showDialog = true
                         }
                     }
                 ),
                 text = stringResource(R.string.value).format(characteristic.value),
                 style = MaterialTheme.typography.bodySmall
             )
+            if (showDialog) {
+                ValueInputDialog(
+                    onDismiss = {
+                        showDialog = false
+                    },
+                    onSubmit = { value ->
+                        viewModel.writeCharacteristic(
+                            characteristic.bluetoothGattCharacteristic,
+                            value
+                        )
+                        showDialog = false
+                    }
+                )
+            }
             characteristic.descriptors.forEach { descriptor ->
                 Column(Modifier.padding(start = 5.dp)) {
                     Spacer(Modifier.height(5.dp))
@@ -243,23 +258,6 @@ fun EventsHandler(viewModel: DeviceDetailsViewModel) {
         DeviceDetailsEvent.CharacteristicWriteSuccess,
         DeviceDetailsEvent.Disconnected -> {
             LocalContext.current.shToast("$event")
-        }
-
-        is DeviceDetailsEvent.ShowValueInputDialog -> {
-            var showDialog by remember { mutableStateOf(true) }
-            if (showDialog) {
-                ValueInputDialog(
-                    onDismiss = {
-                        showDialog = false
-                    },
-                    onSubmit = { value ->
-                        viewModel.writeCharacteristic(
-                            event.characteristic.bluetoothGattCharacteristic, value
-                        )
-                        showDialog = false
-                    }
-                )
-            }
         }
     }
 }
