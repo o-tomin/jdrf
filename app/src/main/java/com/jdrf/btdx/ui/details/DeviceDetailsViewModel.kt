@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.jdrf.btdx.bluetooth.feature.BluetoothConnectionsManager
 import com.jdrf.btdx.bluetooth.feature.DeviceConnectionObserver
 import com.jdrf.btdx.data.BtdxBluetoothService
+import com.jdrf.btdx.data.BtdxCharacteristic
 import com.jdrf.btdx.ui.MviBaseViewModel
 import com.jdrf.btdx.ui.MviBaseViewState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -112,7 +113,13 @@ class DeviceDetailsViewModel @Inject constructor(
 
             }
 
-            is DeviceConnectionObserver.GattResponse.OnCharacteristicWrite,
+            is DeviceConnectionObserver.GattResponse.OnCharacteristicWrite -> {
+                if (response.gattStatus == DeviceConnectionObserver.GattStatus.GattSuccess)
+                    sendEvent(DeviceDetailsEvent.CharacteristicWriteSuccess)
+                else
+                    sendEvent(DeviceDetailsEvent.CharacteristicWriteFailed)
+            }
+
             is DeviceConnectionObserver.GattResponse.OnMtuChanged -> {
                 sendEvent(DeviceDetailsEvent.GattResponse(response))
             }
@@ -137,6 +144,19 @@ class DeviceDetailsViewModel @Inject constructor(
         }.onFailure {
             sendEvent(DeviceDetailsEvent.Error(it))
         }
+
+    fun writeCharacteristic(characteristic: BluetoothGattCharacteristic, value: String) =
+        runCatching {
+            with(state.value) {
+                connection?.writeCharacteristic(characteristic, value)
+            }
+        }.onFailure {
+            sendEvent(DeviceDetailsEvent.Error(it))
+        }
+
+    fun showValueInputDialog(characteristic: BtdxCharacteristic) {
+        sendEvent(DeviceDetailsEvent.ShowValueInputDialog(characteristic))
+    }
 }
 
 data class DeviceDetailsState(
@@ -147,9 +167,14 @@ data class DeviceDetailsState(
 sealed class DeviceDetailsEvent {
     data object Idle : DeviceDetailsEvent()
     data object Disconnected : DeviceDetailsEvent()
+    data object CharacteristicWriteSuccess : DeviceDetailsEvent()
+    data object CharacteristicWriteFailed : DeviceDetailsEvent()
+
     data class GattResponse(
         val response: DeviceConnectionObserver.GattResponse
     ) : DeviceDetailsEvent()
+
+    data class ShowValueInputDialog(val characteristic: BtdxCharacteristic) : DeviceDetailsEvent()
 
     data class Error(val t: Throwable) : DeviceDetailsEvent()
 }

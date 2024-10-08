@@ -15,9 +15,11 @@ import android.bluetooth.BluetoothGatt.GATT_SUCCESS
 import android.bluetooth.BluetoothGatt.GATT_WRITE_NOT_PERMITTED
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothProfile
 import android.content.Context
+import android.os.Build
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
@@ -180,6 +182,16 @@ class DeviceConnectionObserver(
     @SuppressLint("MissingPermission")
     fun readCharacteristic(characteristic: BluetoothGattCharacteristic) {
         gatt.readCharacteristic(characteristic)
+    }
+
+    @SuppressLint("MissingPermission")
+    fun writeCharacteristic(characteristic: BluetoothGattCharacteristic, value: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            gatt.writeCharacteristic(characteristic, value.encodeToByteArray(), WRITE_TYPE_DEFAULT)
+        } else {
+            characteristic.value = value.encodeToByteArray()
+            gatt.writeCharacteristic(characteristic)
+        }
     }
 
     sealed class GattResponse {

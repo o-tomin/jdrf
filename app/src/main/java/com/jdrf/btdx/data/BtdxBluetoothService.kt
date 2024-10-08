@@ -54,7 +54,7 @@ data class BtdxCharacteristic(
 ) {
 
     enum class Property {
-        READ, WRITE, NOTIFY, INDICATE, NONE
+        READ, WRITE, NOTIFY, INDICATE, NONE, BROADCAST, WRITE_NO_RESPONSE, SIGNED_WRITE, EXTENDED_PROPS
     }
 
     sealed class WriteType {
@@ -93,6 +93,18 @@ data class BtdxCharacteristic(
                         }
                         if (it and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) {
                             add(Property.INDICATE)
+                        }
+                        if (it and BluetoothGattCharacteristic.PROPERTY_BROADCAST != 0) {
+                            add(Property.BROADCAST)
+                        }
+                        if (it and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) {
+                            add(Property.WRITE_NO_RESPONSE)
+                        }
+                        if (it and BluetoothGattCharacteristic.PROPERTY_SIGNED_WRITE != 0) {
+                            add(Property.SIGNED_WRITE)
+                        }
+                        if (it and BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS != 0) {
+                            add(Property.EXTENDED_PROPS)
                         }
                         if (this.isEmpty()) {
                             add(Property.NONE)

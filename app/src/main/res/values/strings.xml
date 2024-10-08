@@ -21,4 +21,6 @@
     <string name="permissions">Permissions: %s</string>
     <string name="included_services">Included Services:</string>
     <string name="descriptor_uuid">Descriptor UUID: %s</string>
+    <string name="set_value">Set value</string>
+    <string name="cancel">Cancel</string>
 </resources>
