@@ -13,7 +13,12 @@
     <string name="last_scanned_on_top">Last scanned on top</string>
     <string name="service_uuid">Service UUID: %s</string>
     <string name="parent_service_uuid">Parent service UUID: %s</string>
-    <string name="characteristics_count">Characteristics Count: %s</string>
+    <string name="service_type">Service Type: %s</string>
     <string name="characteristic_uuid">Characteristic UUID: %s</string>
+    <string name="value">Value: %s</string>
+    <string name="write_type">Write Type: %s</string>
+    <string name="properties">Properties: %s</string>
+    <string name="permissions">Permissions: %s</string>
     <string name="included_services">Included Services:</string>
+    <string name="descriptor_uuid">Descriptor UUID: %s</string>
 </resources>

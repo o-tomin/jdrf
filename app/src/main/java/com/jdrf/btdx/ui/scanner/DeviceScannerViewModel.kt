@@ -89,6 +89,7 @@ class DeviceScannerViewModel @Inject constructor(
             is DeviceConnectionObserver.GattResponse.OnCharacteristicRead,
             is DeviceConnectionObserver.GattResponse.OnCharacteristicWrite,
             is DeviceConnectionObserver.GattResponse.OnMtuChanged,
+            is DeviceConnectionObserver.GattResponse.OnDescriptorRead,
             is DeviceConnectionObserver.GattResponse.OnServicesDiscovered -> {
                 sendEvent(DeviceScannerEvent.GattResponse(response))
             }

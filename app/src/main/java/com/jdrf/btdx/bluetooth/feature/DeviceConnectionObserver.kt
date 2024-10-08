@@ -89,17 +89,35 @@ class DeviceConnectionObserver(
                 )
             }
 
-            @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
             override fun onCharacteristicRead(
                 gatt: BluetoothGatt,
                 characteristic: BluetoothGattCharacteristic,
+                value: ByteArray,
                 status: Int,
             ) {
-                super.onCharacteristicRead(gatt, characteristic, status)
+                super.onCharacteristicRead(gatt, characteristic, value, status)
                 _deviceResponseFlow.tryEmit(
                     GattResponse.OnCharacteristicRead(
                         gatt,
                         characteristic,
+                        value.toList(),
+                        toGattStatus(status)
+                    )
+                )
+            }
+
+            override fun onDescriptorRead(
+                gatt: BluetoothGatt,
+                descriptor: BluetoothGattDescriptor,
+                status: Int,
+                value: ByteArray,
+            ) {
+                super.onDescriptorRead(gatt, descriptor, status, value)
+                _deviceResponseFlow.tryEmit(
+                    GattResponse.OnDescriptorRead(
+                        gatt,
+                        descriptor,
+                        value.toList(),
                         toGattStatus(status)
                     )
                 )
@@ -159,6 +177,11 @@ class DeviceConnectionObserver(
         gatt.readDescriptor(descriptor)
     }
 
+    @SuppressLint("MissingPermission")
+    fun readCharacteristic(characteristic: BluetoothGattCharacteristic) {
+        gatt.readCharacteristic(characteristic)
+    }
+
     sealed class GattResponse {
         data class OnConnectionStateChange(
             val gatt: BluetoothGatt,
@@ -186,7 +209,15 @@ class DeviceConnectionObserver(
         data class OnCharacteristicRead(
             val gatt: BluetoothGatt,
             val characteristic: BluetoothGattCharacteristic,
+            val value: List<Byte>,
             val gattStatus: GattStatus,
+        ) : GattResponse()
+
+        data class OnDescriptorRead(
+            val gatt: BluetoothGatt,
+            val descriptor: BluetoothGattDescriptor,
+            val value: List<Byte>,
+            val gattStatus: GattStatus
         ) : GattResponse()
     }
 

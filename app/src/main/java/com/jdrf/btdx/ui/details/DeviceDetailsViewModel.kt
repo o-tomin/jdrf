@@ -1,12 +1,13 @@
 package com.jdrf.btdx.ui.details
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
-import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothProfile
 import androidx.lifecycle.viewModelScope
 import com.jdrf.btdx.bluetooth.feature.BluetoothConnectionsManager
 import com.jdrf.btdx.bluetooth.feature.DeviceConnectionObserver
+import com.jdrf.btdx.data.BtdxBluetoothService
 import com.jdrf.btdx.ui.MviBaseViewModel
 import com.jdrf.btdx.ui.MviBaseViewState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,35 +37,81 @@ class DeviceDetailsViewModel @Inject constructor(
                 }.launchIn(viewModelScope)
 
                 setState { copy(connection = connection) }
+
+                connection.discoverServices()
             }.onFailure {
                 sendEvent(DeviceDetailsEvent.Error(it))
             }
         }
     }
 
-    fun discoverServices() {
-        with(state.value) {
-            connection?.discoverServices()
-        }
-    }
-
     private suspend fun processDeviceResponse(response: DeviceConnectionObserver.GattResponse) {
         when (response) {
             is DeviceConnectionObserver.GattResponse.OnServicesDiscovered -> {
-                updateState {
-                    copy(
-                        services = services + response.gatt.services
-                    )
+                viewModelScope.launch {
+                    setState {
+                        copy(
+                            services = response.gatt.services.map(BtdxBluetoothService::create)
+                        )
+                    }
                 }
+
             }
 
             is DeviceConnectionObserver.GattResponse.OnConnectionStateChange -> {
                 if (response.newState != BluetoothProfile.STATE_CONNECTED) {
-                    sendEvent(DeviceDetailsEvent.ShowDeviceScannerScreen)
+                    sendEvent(DeviceDetailsEvent.Disconnected)
                 }
             }
 
-            is DeviceConnectionObserver.GattResponse.OnCharacteristicRead,
+            is DeviceConnectionObserver.GattResponse.OnCharacteristicRead -> {
+                viewModelScope.launch {
+                    with(state.value) {
+                        val updatedServices = services.map { service ->
+                            val updatedCharacteristics = service.characteristics.map {
+                                if (it.uuid == response.characteristic.uuid) {
+                                    it.copy(value = response.value.toByteArray().decodeToString())
+                                } else it
+                            }
+                            service.copy(
+                                characteristics = updatedCharacteristics
+                            )
+                        }
+
+                        setState { copy(services = updatedServices) }
+                    }
+                }
+            }
+
+            is DeviceConnectionObserver.GattResponse.OnDescriptorRead -> {
+                viewModelScope.launch {
+                    with(state.value) {
+                        val updatedServices = services.map { service ->
+                            val updatedCharacteristics = service.characteristics.map {
+                                if (it.uuid == response.descriptor.characteristic.uuid) {
+                                    it.copy(
+                                        descriptors = it.descriptors.map {
+                                            if (it.uuid == response.descriptor.uuid) {
+                                                it.copy(
+                                                    value = response.value.toByteArray()
+                                                        .decodeToString()
+                                                )
+                                            } else it
+                                        }
+                                    )
+                                } else it
+                            }
+                            service.copy(
+                                characteristics = updatedCharacteristics
+                            )
+                        }
+
+                        setState { copy(services = updatedServices) }
+                    }
+                }
+
+            }
+
             is DeviceConnectionObserver.GattResponse.OnCharacteristicWrite,
             is DeviceConnectionObserver.GattResponse.OnMtuChanged -> {
                 sendEvent(DeviceDetailsEvent.GattResponse(response))
@@ -81,16 +128,25 @@ class DeviceDetailsViewModel @Inject constructor(
             sendEvent(DeviceDetailsEvent.Error(it))
         }
     }
+
+    fun readCharacteristic(characteristic: BluetoothGattCharacteristic?) =
+        runCatching {
+            with(state.value) {
+                connection?.readCharacteristic(characteristic!!)
+            }
+        }.onFailure {
+            sendEvent(DeviceDetailsEvent.Error(it))
+        }
 }
 
 data class DeviceDetailsState(
     val connection: DeviceConnectionObserver? = null,
-    val services: List<BluetoothGattService>
+    val services: List<BtdxBluetoothService>
 ) : MviBaseViewState
 
 sealed class DeviceDetailsEvent {
     data object Idle : DeviceDetailsEvent()
-    data object ShowDeviceScannerScreen : DeviceDetailsEvent()
+    data object Disconnected : DeviceDetailsEvent()
     data class GattResponse(
         val response: DeviceConnectionObserver.GattResponse
     ) : DeviceDetailsEvent()
